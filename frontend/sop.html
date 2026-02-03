@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小塔的 SOP 管理</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#8b5cf6">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f172a', 800: '#1e293b', 700: '#334155' },
+            accent: { primary: '#8b5cf6', secondary: '#06b6d4' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      min-height: 100vh;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    .sop-item:hover {
+      transform: translateX(4px);
+      border-color: rgba(139, 92, 246, 0.5);
+    }
+    .editor {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    }
+  </style>
+</head>
+<body class="text-gray-100">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- 标题和返回按钮 -->
+    <div class="flex items-center justify-between mb-8">
+      <div class="flex-1 text-center">
+        <h1 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          📚 小塔的 SOP 管理
+        </h1>
+        <p class="text-gray-400 mt-2">可视化管理和查看标准操作流程</p>
+      </div>
+      <a href="/" class="flex-shrink-0 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-bold rounded-lg transition-colors">
+        🏠 返回主页
+      </a>
+    </div>
+
+    <!-- 操作栏 -->
+    <div class="flex flex-wrap gap-4 mb-6">
+      <input type="text" id="searchInput" placeholder="🔍 搜索 SOP..." 
+        class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+        oninput="filterSOPList()">
+      <button onclick="showCreateModal()" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors">
+        ➕ 新增 SOP
+      </button>
+    </div>
+
+    <!-- SOP 列表 -->
+    <div id="sopList" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <!-- 加载中 -->
+      <div class="col-span-full text-center py-12 text-gray-400">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
+        <p class="mt-4">加载中...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 查看/编辑 SOP Modal -->
+  <div id="sopModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <h2 id="modalTitle" class="text-xl font-bold text-purple-400">查看 SOP</h2>
+        <button onclick="closeModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+      </div>
+      <div class="flex-1 overflow-hidden flex flex-col p-4">
+        <textarea id="sopEditor" class="editor flex-1 w-full bg-gray-900 border border-gray-700 rounded-lg p-4 text-white text-sm resize-none focus:border-purple-500 focus:outline-none" spellcheck="false"></textarea>
+      </div>
+      <div class="flex items-center justify-between p-4 border-t border-gray-700">
+        <button onclick="deleteSOP()" id="deleteBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors">
+          🗑️ 删除
+        </button>
+        <div class="flex gap-4">
+          <button onclick="closeModal()" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors">
+            取消
+          </button>
+          <button onclick="saveSOP()" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors">
+            💾 保存
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增 SOP Modal -->
+  <div id="createModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gray-800 rounded-2xl w-full max-w-lg">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <h2 class="text-xl font-bold text-purple-400">新增 SOP</h2>
+        <button onclick="closeCreateModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+      </div>
+      <div class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">文件名（英文）</label>
+          <input type="text" id="newFileName" placeholder="例如: deploy-app.md" 
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">SOP 标题</label>
+          <input type="text" id="newTitle" placeholder="例如: 部署应用流程" 
+            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none">
+        </div>
+      </div>
+      <div class="flex justify-end gap-4 p-4 border-t border-gray-700">
+        <button onclick="closeCreateModal()" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors">
+          取消
+        </button>
+        <button onclick="createSOP()" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors">
+          ➕ 创建
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 消息提示 -->
+  <div id="message" class="hidden fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white font-bold"></div>
+
+  <script>
+    let sopList = [];
+    let currentSOP = null;
+
+    // 加载 SOP 列表
+    async function loadSOPList() {
+      try {
+        const response = await fetch('/api/sop/list');
+        const result = await response.json();
+        if (result.success) {
+          sopList = result.data;
+          renderSOPList();
+        } else {
+          showMessage('加载失败: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('网络错误: ' + error.message, 'error');
+      }
+    }
+
+    // 渲染 SOP 列表
+    function renderSOPList(filter = '') {
+      const container = document.getElementById('sopList');
+      const filtered = sopList.filter(sop => 
+        sop.title.toLowerCase().includes(filter.toLowerCase()) ||
+        sop.name.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-12 text-gray-500">
+            <span class="text-4xl">📭</span>
+            <p class="mt-2">没有找到 SOP</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(sop => `
+        <div class="card sop-item rounded-xl p-4 cursor-pointer transition-all" onclick="viewSOP('${sop.name}')">
+          <div class="flex items-start gap-3">
+            <span class="text-2xl">📄</span>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-bold text-purple-400 truncate">${sop.title}</h3>
+              <p class="text-gray-500 text-sm truncate">${sop.name}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 搜索过滤
+    function filterSOPList() {
+      const query = document.getElementById('searchInput').value;
+      renderSOPList(query);
+    }
+
+    // 查看 SOP
+    async function viewSOP(filename) {
+      try {
+        const response = await fetch('/api/sop/content?file=' + encodeURIComponent(filename));
+        const result = await response.json();
+        if (result.success) {
+          currentSOP = filename;
+          document.getElementById('modalTitle').textContent = result.data.title;
+          document.getElementById('sopEditor').value = result.data.content;
+          document.getElementById('deleteBtn').dataset.file = filename;
+          document.getElementById('sopModal').classList.remove('hidden');
+          document.getElementById('sopModal').classList.add('flex');
+        } else {
+          showMessage('加载失败: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('网络错误: ' + error.message, 'error');
+      }
+    }
+
+    // 保存 SOP
+    async function saveSOP() {
+      if (!currentSOP) return;
+      const content = document.getElementById('sopEditor').value;
+      
+      try {
+        const response = await fetch('/api/sop/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: currentSOP, content })
+        });
+        const result = await response.json();
+        if (result.success) {
+          showMessage('✅ 保存成功！', 'success');
+          closeModal();
+          loadSOPList();
+        } else {
+          showMessage('❌ 保存失败: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('❌ 保存失败: ' + error.message, 'error');
+      }
+    }
+
+    // 删除 SOP
+    async function deleteSOP() {
+      if (!confirm('确定要删除这个 SOP 吗？')) return;
+      const filename = document.getElementById('deleteBtn').dataset.file;
+      
+      try {
+        const response = await fetch('/api/sop/delete?file=' + encodeURIComponent(filename), { method: 'DELETE' });
+        const result = await response.json();
+        if (result.success) {
+          showMessage('✅ 删除成功！', 'success');
+          closeModal();
+          loadSOPList();
+        } else {
+          showMessage('❌ 删除失败: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('❌ 删除失败: ' + error.message, 'error');
+      }
+    }
+
+    // 显示新增 Modal
+    function showCreateModal() {
+      document.getElementById('newFileName').value = '';
+      document.getElementById('newTitle').value = '';
+      document.getElementById('createModal').classList.remove('hidden');
+      document.getElementById('createModal').classList.add('flex');
+    }
+
+    // 关闭新增 Modal
+    function closeCreateModal() {
+      document.getElementById('createModal').classList.add('hidden');
+      document.getElementById('createModal').classList.remove('flex');
+    }
+
+    // 创建 SOP
+    async function createSOP() {
+      const filename = document.getElementById('newFileName').value.trim();
+      const title = document.getElementById('newTitle').value.trim();
+      
+      if (!filename || !filename.endsWith('.md')) {
+        showMessage('❌ 文件名必须以 .md 结尾', 'error');
+        return;
+      }
+      if (!title) {
+        showMessage('❌ 请输入标题', 'error');
+        return;
+      }
+
+      const content = `# ${title}\n\n## 概述\n\n请在此处填写操作流程...\n\n## 步骤\n\n1. \n2. \n3. \n`;
+
+      try {
+        const response = await fetch('/api/sop/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: filename, content })
+        });
+        const result = await response.json();
+        if (result.success) {
+          showMessage('✅ 创建成功！', 'success');
+          closeCreateModal();
+          loadSOPList();
+        } else {
+          showMessage('❌ 创建失败: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showMessage('❌ 创建失败: ' + error.message, 'error');
+      }
+    }
+
+    // 关闭 Modal
+    function closeModal() {
+      document.getElementById('sopModal').classList.add('hidden');
+      document.getElementById('sopModal').classList.remove('flex');
+      currentSOP = null;
+    }
+
+    // 显示消息
+    function showMessage(text, type) {
+      const el = document.getElementById('message');
+      el.textContent = text;
+      el.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg font-bold ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+      el.classList.remove('hidden');
+      setTimeout(() => el.classList.add('hidden'), 3000);
+    }
+
+    // 初始化
+    loadSOPList();
+  </script>
+</body>
+</html>
