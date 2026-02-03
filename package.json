@@ -1,0 +1,15 @@
+{
+  "name": "sop-manager",
+  "version": "1.0.0",
+  "description": "小塔的 SOP 管理页面 - 可视化管理标准操作流程库",
+  "main": "backend/sop-api.js",
+  "scripts": {
+    "start": "node ../../shared/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tars-wu-2026/sop-manager.git"
+  },
+  "author": "wushengjie",
+  "license": "MIT"
+}
