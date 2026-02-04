@@ -140,7 +140,7 @@
     // 加载 SOP 列表
     async function loadSOPList() {
       try {
-        const response = await fetch('/api/sop/list');
+        const response = await fetch('/api/sop-manager/list');
         const result = await response.json();
         if (result.success) {
           sopList = result.data;
@@ -193,7 +193,7 @@
     // 查看 SOP
     async function viewSOP(filename) {
       try {
-        const response = await fetch('/api/sop/content?file=' + encodeURIComponent(filename));
+        const response = await fetch('/api/sop-manager/content?file=' + encodeURIComponent(filename));
         const result = await response.json();
         if (result.success) {
           currentSOP = filename;
@@ -216,7 +216,7 @@
       const content = document.getElementById('sopEditor').value;
       
       try {
-        const response = await fetch('/api/sop/save', {
+        const response = await fetch('/api/sop-manager/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ file: currentSOP, content })
@@ -240,7 +240,7 @@
       const filename = document.getElementById('deleteBtn').dataset.file;
       
       try {
-        const response = await fetch('/api/sop/delete?file=' + encodeURIComponent(filename), { method: 'DELETE' });
+        const response = await fetch('/api/sop-manager/delete?file=' + encodeURIComponent(filename), { method: 'DELETE' });
         const result = await response.json();
         if (result.success) {
           showMessage('✅ 删除成功！', 'success');
@@ -285,7 +285,7 @@
       const content = `# ${title}\n\n## 概述\n\n请在此处填写操作流程...\n\n## 步骤\n\n1. \n2. \n3. \n`;
 
       try {
-        const response = await fetch('/api/sop/create', {
+        const response = await fetch('/api/sop-manager/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ file: filename, content })

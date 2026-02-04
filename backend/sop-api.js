@@ -10,7 +10,7 @@ const path = require('path');
 const SOP_DIR = '/root/.openclaw/workspace/SOP';
 
 // 获取 SOP 列表
-function handleSOPList(req, res) {
+function handleList(req, res) {
     try {
         const files = fs.readdirSync(SOP_DIR);
         const sopList = files
@@ -31,7 +31,7 @@ function handleSOPList(req, res) {
 }
 
 // 读取 SOP 内容
-function handleSOPContent(req, res) {
+function handleContent(req, res) {
     try {
         const url = new URL(req.url, `http://localhost:3000`);
         const filename = url.searchParams.get('file');
@@ -62,7 +62,7 @@ function handleSOPContent(req, res) {
 }
 
 // 保存 SOP 内容
-function handleSOPSave(req, res) {
+function handleSave(req, res) {
     try {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -80,7 +80,7 @@ function handleSOPSave(req, res) {
 }
 
 // 创建 SOP
-function handleSOPCreate(req, res) {
+function handleCreate(req, res) {
     try {
         let body = '';
         req.on('data', chunk => body += chunk);
@@ -105,7 +105,7 @@ function handleSOPCreate(req, res) {
 }
 
 // 删除 SOP
-function handleSOPDelete(req, res) {
+function handleDelete(req, res) {
     try {
         const url = new URL(req.url, `http://localhost:3000`);
         const filename = url.searchParams.get('file');
@@ -131,4 +131,4 @@ function handleSOPDelete(req, res) {
     }
 }
 
-module.exports = { handleSOPList, handleSOPContent, handleSOPSave, handleSOPCreate, handleSOPDelete };
+module.exports = { handleList, handleContent, handleSave, handleCreate, handleDelete };
